@@ -3,7 +3,6 @@
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <ctime>
 #include <filesystem>
-#include <fstream>
 
 using namespace geode::prelude;
 
@@ -60,25 +59,24 @@ void captureTransparentLevel(PlayLayer* playLayer) {
 
     // Build the output path from the folder and file type settings
     auto ext = getFileExtension();
-    auto format = ext == "jpg" ? kCCImageFormatJPEG : kCCImageFormatPNG;
     auto timestamp = std::time(nullptr);
     auto filename = fmt::format("transparent_capture_{}.{}", timestamp, ext);
     auto path = getOutputFolder() / filename;
-
     auto pathStr = path.generic_string();
     log::info("Saving capture to {}", pathStr);
-    log::info("Cocos writable path: {}", CCFileUtils::sharedFileUtils()->getWritablePath());
 
-    // Check whether a plain text file can be written to the same folder
-    {
-        auto testPath = path.parent_path() / "write_test.txt";
-        std::ofstream test(testPath);
-        log::info("Plain write test to {}: {}", testPath.string(), test.is_open() ? "ok" : "failed");
+    // Get the rendered pixels as an image, then save that image to disk
+    auto image = renderTexture->newCCImage(true);
+    if (image) {
+        bool saved = image->saveToFile(pathStr.c_str(), true);
+        image->release();
+        log::info("CCImage::saveToFile returned: {}", saved);
+    } else {
+        log::error("newCCImage returned null");
     }
 
-    renderTexture->saveToFile(pathStr.c_str(), format);
     bool written = std::filesystem::exists(path);
-    log::info("saveToFile finished, file exists: {}", written);
+    log::info("File exists after save: {}", written);
 
     if (written) {
         Notification::create("Saved transparent image!", NotificationIcon::Success)->show();
