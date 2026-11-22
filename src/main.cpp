@@ -13,12 +13,12 @@ void captureTransparentLevel(PlayLayer* playLayer) {
 
     // Save current visibility states
     bool bgVisible = playLayer->m_background ? playLayer->m_background->isVisible() : true;
-    bool groundVisible = playLayer->m_ground ? playLayer->m_ground->isVisible() : true;
+    bool groundVisible = playLayer->m_groundLayer ? playLayer->m_groundLayer->isVisible() : true;
     bool uiVisible = playLayer->m_uiLayer ? playLayer->m_uiLayer->isVisible() : true;
 
     // Hide background, ground, and UI so only objects, player, and trails render
     if (playLayer->m_background) playLayer->m_background->setVisible(false);
-    if (playLayer->m_ground) playLayer->m_ground->setVisible(false);
+    if (playLayer->m_groundLayer) playLayer->m_groundLayer->setVisible(false);
     if (playLayer->m_uiLayer) playLayer->m_uiLayer->setVisible(false);
 
     // Create an RGBA render texture (supports variable alpha transparency)
@@ -35,7 +35,7 @@ void captureTransparentLevel(PlayLayer* playLayer) {
 
     // Restore visibility immediately
     if (playLayer->m_background) playLayer->m_background->setVisible(bgVisible);
-    if (playLayer->m_ground) playLayer->m_ground->setVisible(groundVisible);
+    if (playLayer->m_groundLayer) playLayer->m_groundLayer->setVisible(groundVisible);
     if (playLayer->m_uiLayer) playLayer->m_uiLayer->setVisible(uiVisible);
 
     // Save PNG to the mod's save directory
@@ -50,13 +50,13 @@ void captureTransparentLevel(PlayLayer* playLayer) {
 
 // Press F9 inside any level to capture
 class $modify(MyKeyboardDispatcher, CCKeyboardDispatcher) {
-    bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat) {
+    bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat, double timestamp) {
         if (down && !repeat && key == enumKeyCodes::KEY_F9) {
             if (auto playLayer = PlayLayer::get()) {
                 captureTransparentLevel(playLayer);
                 return true;
             }
         }
-        return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, repeat);
+        return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, repeat, timestamp);
     }
 };
