@@ -6,10 +6,10 @@
 		"mac": "2.2081",
 		"ios": "2.2081"
 	},
-	"id": "your-mom.transparent-screenshot",
+	"id": "two.transparent-screenshot",
 	"name": "Transparent Screenshot",
-	"version": "v1.0.5",
-	"developer": "yourmom",
+	"version": "v1.0.6",
+	"developer": "Two",
 	"description": "",
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
