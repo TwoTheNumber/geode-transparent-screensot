@@ -13,5 +13,13 @@
 	"description": "",
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
+	},
+	"settings": {
+		"output-folder": {
+			"name": "Output folder",
+			"description": "Folder where transparent PNGs are saved. Leave empty to use the mod's default save folder.",
+			"type": "string",
+			"default": ""
+		}
 	}
 }
