@@ -15,11 +15,11 @@
 		"geode.node-ids": ">=v1.23.3"
 	},
 	"settings": {
-		"output-folder": {
-			"name": "Output folder",
-			"description": "Folder where transparent PNGs are saved. Leave empty to use the mod's default save folder.",
-			"type": "string",
-			"default": ""
+		"save-to-downloads": {
+			"name": "Save to Downloads",
+			"description": "When on, transparent PNGs are saved to your Downloads folder (Windows only). When off, they go to the mod's default save folder.",
+			"type": "bool",
+			"default": false
 		}
 	}
 }
