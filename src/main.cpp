@@ -68,7 +68,7 @@ void captureTransparentLevel(PlayLayer* playLayer) {
     // Get the rendered pixels as an image, then save that image to disk
     auto image = renderTexture->newCCImage(true);
     if (image) {
-        bool saved = image->saveToFile(pathStr.c_str(), true);
+        bool saved = image->saveToFile(pathStr.c_str(), false);
         image->release();
         log::info("CCImage::saveToFile returned: {}", saved);
     } else {
