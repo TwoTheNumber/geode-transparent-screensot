@@ -1,62 +1,45 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-#include <Geode/modify/CCKeyboardDispatcher.hpp>
-#include <ctime>
 
 using namespace geode::prelude;
 
-void captureTransparentLevel(PlayLayer* playLayer) {
-    if (!playLayer) return;
+class $modify(TransparentScreenshotPlayLayer, PlayLayer) {
+    bool init(GJGameLevel* level, bool useDownloadedLevel, bool dontCreateObjects) {
+        if (!PlayLayer::init(level, useDownloadedLevel, dontCreateObjects)) {
+            return false;
+        }
+        return true;
+    }
 
-    auto director = CCDirector::sharedDirector();
-    auto winSize = director->getWinSize();
+    void keyDown(enumKeyCodes key) {
+        PlayLayer::keyDown(key);
 
-    // Save current visibility states
-    bool bgVisible = playLayer->m_background ? playLayer->m_background->isVisible() : true;
-    bool groundVisible = playLayer->m_ground ? playLayer->m_ground->isVisible() : true;
-    bool uiVisible = playLayer->m_uiLayer ? playLayer->m_uiLayer->isVisible() : true;
+        // Capture screenshot on F9 keypress
+        if (key == enumKeyCodes::KEY_F9) {
+            auto director = CCDirector::sharedDirector();
+            auto winSize = director->getWinSize();
 
-    // Hide background, ground, and UI so only objects, player, and trails render
-    if (playLayer->m_background) playLayer->m_background->setVisible(false);
-    if (playLayer->m_ground) playLayer->m_ground->setVisible(false);
-    if (playLayer->m_uiLayer) playLayer->m_uiLayer->setVisible(false);
+            // Create a render texture with RGBA buffer for transparency
+            auto texture = CCRenderTexture::create(
+                static_cast<int>(winSize.width), 
+                static_cast<int>(winSize.height), 
+                CCTexture2D::PixelFormat::RGBA8888
+            );
 
-    // Create an RGBA render texture (supports variable alpha transparency)
-    auto renderTexture = CCRenderTexture::create(
-        static_cast<int>(winSize.width),
-        static_cast<int>(winSize.height),
-        kCCTexture2DPixelFormat_RGBA8888
-    );
+            if (texture) {
+                texture->begin();
+                this->visit();
+                texture->end();
 
-    // Clear with 0 alpha and draw the level
-    renderTexture->beginWithClear(0, 0, 0, 0);
-    playLayer->visit();
-    renderTexture->end();
-
-    // Restore visibility immediately
-    if (playLayer->m_background) playLayer->m_background->setVisible(bgVisible);
-    if (playLayer->m_ground) playLayer->m_ground->setVisible(groundVisible);
-    if (playLayer->m_uiLayer) playLayer->m_uiLayer->setVisible(uiVisible);
-
-    // Save PNG to the mod's save directory
-    auto timestamp = std::time(nullptr);
-    auto filename = fmt::format("transparent_capture_{}.png", timestamp);
-    auto path = Mod::get()->getSaveDir() / filename;
-
-    renderTexture->saveToFile(path.string().c_str(), kCCImageFormatPNG);
-
-    Notification::create("Saved transparent PNG!", NotificationIcon::Success)->show();
-}
-
-// Press F9 inside any level to capture
-class $modify(MyKeyboardDispatcher, CCKeyboardDispatcher) {
-    bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat) {
-        if (down && !repeat && key == enumKeyCodes::KEY_F9) {
-            if (auto playLayer = PlayLayer::get()) {
-                captureTransparentLevel(playLayer);
-                return true;
+                // Save to the Geode mod's save directory
+                std::string path = Mod::get()->getSaveDir().string() + "/transparent_screenshot.png";
+                
+                if (texture->saveToFile(path.c_str(), true)) {
+                    FLAlertLayer::create("Screenshot Saved", "Saved transparent screenshot to your Geode mod save folder!", "OK")->show();
+                } else {
+                    FLAlertLayer::create("Error", "Failed to save screenshot file.", "OK")->show();
+                }
             }
         }
-        return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, repeat);
     }
 };
