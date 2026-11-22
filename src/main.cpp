@@ -2,8 +2,21 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <ctime>
+#include <filesystem>
 
 using namespace geode::prelude;
+
+// Returns the folder set in mod settings, or the default save folder if it's empty
+std::filesystem::path getOutputFolder() {
+    auto custom = Mod::get()->getSettingValue<std::string>("output-folder");
+    if (!custom.empty()) {
+        std::filesystem::path folder(custom);
+        std::error_code ec;
+        std::filesystem::create_directories(folder, ec);
+        if (!ec) return folder;
+    }
+    return Mod::get()->getSaveDir();
+}
 
 void captureTransparentLevel(PlayLayer* playLayer) {
     if (!playLayer) return;
@@ -38,10 +51,10 @@ void captureTransparentLevel(PlayLayer* playLayer) {
     if (playLayer->m_groundLayer) playLayer->m_groundLayer->setVisible(groundVisible);
     if (playLayer->m_uiLayer) playLayer->m_uiLayer->setVisible(uiVisible);
 
-    // Save PNG to the mod's save directory
+    // Save PNG to the configured output folder
     auto timestamp = std::time(nullptr);
     auto filename = fmt::format("transparent_capture_{}.png", timestamp);
-    auto path = Mod::get()->getSaveDir() / filename;
+    auto path = getOutputFolder() / filename;
 
     renderTexture->saveToFile(path.string().c_str(), kCCImageFormatPNG);
 
