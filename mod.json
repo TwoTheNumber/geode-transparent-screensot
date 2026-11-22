@@ -8,8 +8,8 @@
 	},
 	"id": "your-mom.transparent-screenshot",
 	"name": "Transparent Screenshot",
-	"version": "v1.0.3",
-	"developer": "your mom",
+	"version": "v1.0.4",
+	"developer": "yourmom",
 	"description": "",
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
