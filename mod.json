@@ -8,18 +8,25 @@
 	},
 	"id": "your-mom.transparent-screenshot",
 	"name": "Transparent Screenshot",
-	"version": "v1.0.1",
+	"version": "v1.0.2",
 	"developer": "your mom",
 	"description": "",
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
 	},
 	"settings": {
-		"save-to-downloads": {
-			"name": "Save to Downloads",
-			"description": "When on, transparent PNGs are saved to your Downloads folder (Windows only). When off, they go to the mod's default save folder.",
-			"type": "bool",
-			"default": false
+		"output-folder": {
+			"name": "Output folder",
+			"description": "Click to choose where captures are saved. Leave empty to use the mod's default save folder.",
+			"type": "folder",
+			"default": ""
+		},
+		"file-type": {
+			"name": "File type",
+			"description": "Format for saved captures. PNG keeps transparency. JPG has no transparency, so the background will be black.",
+			"type": "string",
+			"default": "PNG",
+			"enum-options": ["PNG", "JPG"]
 		}
 	}
 }
