@@ -3,6 +3,7 @@
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
 
 using namespace geode::prelude;
 
@@ -64,14 +65,22 @@ void captureTransparentLevel(PlayLayer* playLayer) {
     auto filename = fmt::format("transparent_capture_{}.{}", timestamp, ext);
     auto path = getOutputFolder() / filename;
 
-    // Cocos2d treats a path as absolute only if it has forward slashes,
-    // so convert the Windows backslashes before saving
     auto pathStr = path.generic_string();
     log::info("Saving capture to {}", pathStr);
+    log::info("Cocos writable path: {}", CCFileUtils::sharedFileUtils()->getWritablePath());
+
+    // Check whether a plain text file can be written to the same folder
+    {
+        auto testPath = path.parent_path() / "write_test.txt";
+        std::ofstream test(testPath);
+        log::info("Plain write test to {}: {}", testPath.string(), test.is_open() ? "ok" : "failed");
+    }
 
     renderTexture->saveToFile(pathStr.c_str(), format);
+    bool written = std::filesystem::exists(path);
+    log::info("saveToFile finished, file exists: {}", written);
 
-    if (std::filesystem::exists(path)) {
+    if (written) {
         Notification::create("Saved transparent image!", NotificationIcon::Success)->show();
     } else {
         log::error("Capture was not written to {}", pathStr);
