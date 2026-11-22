@@ -2,23 +2,26 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <ctime>
-#include <cstdlib>
 #include <filesystem>
 
 using namespace geode::prelude;
 
-// Returns the Downloads folder if the setting is on, otherwise the default save folder
+// Returns the folder chosen in mod settings, or the default save folder if none is set
 std::filesystem::path getOutputFolder() {
-    if (Mod::get()->getSettingValue<bool>("save-to-downloads")) {
-        // USERPROFILE is set on Windows, e.g. C:\Users\rekal
-        if (const char* profile = std::getenv("USERPROFILE")) {
-            std::filesystem::path downloads = std::filesystem::path(profile) / "Downloads";
-            std::error_code ec;
-            std::filesystem::create_directories(downloads, ec);
-            if (!ec) return downloads;
-        }
+    auto folder = Mod::get()->getSettingValue<std::filesystem::path>("output-folder");
+    if (!folder.empty()) {
+        std::error_code ec;
+        std::filesystem::create_directories(folder, ec);
+        if (!ec) return folder;
+        log::warn("Could not create output folder {}: {}", folder.string(), ec.message());
     }
     return Mod::get()->getSaveDir();
+}
+
+// Returns "png" or "jpg" based on the file type setting
+std::string getFileExtension() {
+    auto type = Mod::get()->getSettingValue<std::string>("file-type");
+    return type == "JPG" ? "jpg" : "png";
 }
 
 void captureTransparentLevel(PlayLayer* playLayer) {
@@ -54,21 +57,31 @@ void captureTransparentLevel(PlayLayer* playLayer) {
     if (playLayer->m_groundLayer) playLayer->m_groundLayer->setVisible(groundVisible);
     if (playLayer->m_uiLayer) playLayer->m_uiLayer->setVisible(uiVisible);
 
-    // Save PNG to the chosen output folder
+    // Build the output path from the folder and file type settings
+    auto ext = getFileExtension();
+    auto format = ext == "jpg" ? kCCImageFormatJPEG : kCCImageFormatPNG;
     auto timestamp = std::time(nullptr);
-    auto filename = fmt::format("transparent_capture_{}.png", timestamp);
+    auto filename = fmt::format("transparent_capture_{}.{}", timestamp, ext);
     auto path = getOutputFolder() / filename;
+    log::info("Saving capture to {}", path.string());
 
-    renderTexture->saveToFile(path.string().c_str(), kCCImageFormatPNG);
+    renderTexture->saveToFile(path.string().c_str(), format);
 
-    Notification::create("Saved transparent PNG!", NotificationIcon::Success)->show();
+    if (std::filesystem::exists(path)) {
+        Notification::create("Saved transparent image!", NotificationIcon::Success)->show();
+    } else {
+        log::error("Capture was not written to {}", path.string());
+        Notification::create("Failed to save image, see log", NotificationIcon::Error)->show();
+    }
 }
 
 // Press F9 inside any level to capture
 class $modify(MyKeyboardDispatcher, CCKeyboardDispatcher) {
     bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat, double timestamp) {
         if (down && !repeat && key == enumKeyCodes::KEY_F9) {
-            if (auto playLayer = PlayLayer::get()) {
+            auto playLayer = PlayLayer::get();
+            log::info("F9 pressed, PlayLayer present: {}", playLayer != nullptr);
+            if (playLayer) {
                 captureTransparentLevel(playLayer);
                 return true;
             }
