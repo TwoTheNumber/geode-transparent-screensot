@@ -63,14 +63,18 @@ void captureTransparentLevel(PlayLayer* playLayer) {
     auto timestamp = std::time(nullptr);
     auto filename = fmt::format("transparent_capture_{}.{}", timestamp, ext);
     auto path = getOutputFolder() / filename;
-    log::info("Saving capture to {}", path.string());
 
-    renderTexture->saveToFile(path.string().c_str(), format);
+    // Cocos2d treats a path as absolute only if it has forward slashes,
+    // so convert the Windows backslashes before saving
+    auto pathStr = path.generic_string();
+    log::info("Saving capture to {}", pathStr);
+
+    renderTexture->saveToFile(pathStr.c_str(), format);
 
     if (std::filesystem::exists(path)) {
         Notification::create("Saved transparent image!", NotificationIcon::Success)->show();
     } else {
-        log::error("Capture was not written to {}", path.string());
+        log::error("Capture was not written to {}", pathStr);
         Notification::create("Failed to save image, see log", NotificationIcon::Error)->show();
     }
 }
