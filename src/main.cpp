@@ -2,18 +2,21 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <ctime>
+#include <cstdlib>
 #include <filesystem>
 
 using namespace geode::prelude;
 
-// Returns the folder set in mod settings, or the default save folder if it's empty
+// Returns the Downloads folder if the setting is on, otherwise the default save folder
 std::filesystem::path getOutputFolder() {
-    auto custom = Mod::get()->getSettingValue<std::string>("output-folder");
-    if (!custom.empty()) {
-        std::filesystem::path folder(custom);
-        std::error_code ec;
-        std::filesystem::create_directories(folder, ec);
-        if (!ec) return folder;
+    if (Mod::get()->getSettingValue<bool>("save-to-downloads")) {
+        // USERPROFILE is set on Windows, e.g. C:\Users\rekal
+        if (const char* profile = std::getenv("USERPROFILE")) {
+            std::filesystem::path downloads = std::filesystem::path(profile) / "Downloads";
+            std::error_code ec;
+            std::filesystem::create_directories(downloads, ec);
+            if (!ec) return downloads;
+        }
     }
     return Mod::get()->getSaveDir();
 }
@@ -51,7 +54,7 @@ void captureTransparentLevel(PlayLayer* playLayer) {
     if (playLayer->m_groundLayer) playLayer->m_groundLayer->setVisible(groundVisible);
     if (playLayer->m_uiLayer) playLayer->m_uiLayer->setVisible(uiVisible);
 
-    // Save PNG to the configured output folder
+    // Save PNG to the chosen output folder
     auto timestamp = std::time(nullptr);
     auto filename = fmt::format("transparent_capture_{}.png", timestamp);
     auto path = getOutputFolder() / filename;
